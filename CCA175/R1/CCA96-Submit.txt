@@ -1,0 +1,42 @@
+Scenario 92
+You have been given a spark scala application, which is bundled in jar named hadoopexam.jar.
+Your application class name is com.hadoopexam.MyTask
+You want that while submitting your application should launch a driver on one of the cluster node
+
+spark-submit --class com.hadoopexam.MyTask -master yarn --deploy-mode cluster SPARK HOME/lib/hadoopexam.jar 10
+
+
+Scenario 93
+You have to run your Spark application with locally 8 thread or locally on 8 cores
+
+spark-submit --class com.hadoopexam.MyTask -master local[8] --deploy-mode cluster SPARK HOME/lib/hadoopexam.jar 10
+
+
+Scenario 94
+You have to run your Spark application on yarn with each executor 20GB and number of executors should be 50
+
+export HADOOP_CONF_DIR=master yarn
+./bin/spark-submit \
+-class com.hadoopexam.MyTask \ master yarn\
+-deploy-mode cluster \ # can be client for client mode
+--executor-memory 20GB\
+--num-executors 50 \
+/path/to/hadoopexam.jar \
+1000
+
+
+Scenario 95
+You have to run your Spark application on yarn with each executor Maximum heap size to be 512MB and Number of processor cores to allocate on each executor will be 1 and Your main application required three values as input arguments V1 V2 V3
+
+./bin/spark-submit -class com.hadoopexam.MyTask --master yarn-cluster--num-executors 3 --driver-memory 512m -executor-memory 512m --executor-cores 1 lib/hadoopexam.jar V1 V2 V3
+#julian use --total-executor-cores that only use for standalone and Mesos not for YARN
+
+
+Scenario 96
+Your spark application required extra Java options as below
+- XX:+PrintGCDetails- XX:+PrintGCTimeStamps
+
+spark.executor.extraJavaOptions = -XX:+PrintGCDetails -XX:+PrintGCTimeStamps
+
+./bin/spark-submit --name "My app" --master local[4] --conf spark.eventLog.enabled=talse --conf spark.executor.extraJavaOptions = -XX:+PrintGCDetails -XX:+PrintGCTimeStamps hadoopexam.jar
+

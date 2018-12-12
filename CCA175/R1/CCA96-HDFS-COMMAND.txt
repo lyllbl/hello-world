@@ -1,0 +1,35 @@
+Scenario 29:
+1. Create a directory in hdfs named hdfs_commands.
+
+hdfs dfs -mkdir hdfs_commands
+
+2. Create a file in hdfs named data.txt in hdfs_commands.
+
+hdfs dfs -touchz hdfs_commands/data.txt
+
+3. Now copy this data.txt file on local filesystem, however while copying file please make sure file properties are not changed e.g. file permissions.
+
+hdfs dfs -get -p hdfs_commands/data.txt data.txt
+
+--that might be appear get: chown: invalid group: ‘root:supergroup’
+
+4. Now create a file in local directory named data_local.txt and move this file to hdfs in hdfs_commands directory.
+
+touch data_local.txt
+hdfs dfs -moveFromLocal data_local.txt hdfs_commands
+--ask to move not copy
+
+
+5. Create a file data_hdfs.txt in hdfs_commands directory and copy it to local file system.
+
+hdfs dfs -touchz hdfs_commands/data_hdfs.txt 
+hdfs dfs -get hdfs_commands/data_hdfs.txt
+
+6. Create a file in local filesystem named file1.txt and put it to hdfs
+
+touch file1.txt
+hdfs dfs -put file1.txt
+
+
+
+

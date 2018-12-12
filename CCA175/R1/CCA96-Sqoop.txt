@@ -1,0 +1,357 @@
+CCA175
+Scenario 1:
+1) Connect MySQL DB and check the content of the tables.
+sqoop list-tables --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera
+2) Copy "retaildb.categories" table to hdfs, without specifying directory name.
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories
+3)Copy "retaildb.categories" table to hdfs, in a directory name "categories_target".
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --table categories --username retail_dba --password cloudera --target-dir categories_target
+4)Copy "retaildb.categories" table to hdfs, in a warehouse directory name "categories_warehouse".
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --table categories --username retail_dba --password cloudera --warehouse-dir categories_warehouse
+
+–warehouse-dir creates the parent directory for you as well unlike --target-dir that’s why when you do import multiple tables using --warehouse it creates those folders with table name unlike --target-dir.
+
+by default file will be stored in /usr/$current user/ folder 
+
+Scenario 2:
+1) Which command will you use to check all the available command line options on HDFS and How will you get the Help for individual command.
+ hdfs --help
+ hdfs dfs -help 
+2) Create a new Empty Directory named Employee using Command line. And also create an empty file named in it Techinc.txt
+ hdfs dfs -mkdir Employee
+ hdfs dfs -touchz Employee/Techinc.txt
+3) Load both companies Employee data in Employee directory (How to override existing file in HDFS).
+ hdfs dfs -put -f /root/Desktop/Techinc.txt Employee
+ hdfs dfs -put -f /root/Desktop/MPTech.txt Employee
+4) Merge both the Employees data in a Single tile called MergedEmployee.txt, merged tiles should have new line character at the end of each file content.
+ hdfs dfs -getmerge -nl Employee /root/Desktop/MergedEmployee.txt
+5) Upload merged file on HDFS and change the file permission on HDFS merged file, so that owner and group member can read and write, other user can read the file.
+ hdfs dfs -put /root/Desktop/MergedEmployee.txt Employee
+ hdfs dfs -chmod 664 /user/root/Employee/MergedEmployee.txt
+6) Write a command to export the individual file as well as entire directory from HDFS to local file System.
+ hdfs dfs -get Employee /root/Desktop
+ 
+ appendToFile doesn't append a new line in file.
+ 
+Scenario 3:
+1) Import data from categories table, where category=22 (Data should be stored in categories subset)
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --where "category_id=22" --target-dir categoies_subset
+2) Import data from categories table, where category>22 (Data should be stored in categories_subset_2)
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --where "category_id>22" --target-dir categoies_subset2
+3) Import data from categories table, where category between 1 and 22 (Data should be stored in categories_subset_3)
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --where "category_id between 1 and 22" --target-dir categories_subset_3
+4) While importing catagories data change the delimiter to '|' (Data should be stored in categories_subset_S)
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --target-dir categories_subset_S --fields-terminated-by '|'
+5) Importing data from catagories table and restrict the import to category_name,category id columns only with delimiter as '|'
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --columns "category_name,category_id" --fields-terminated-by '|'  --target-dir category_subset_columns2
+6) Add null values in the table using below SQL statement ALTER TABLE categories modify category_department_id int(11); INSERT INTO categories values (eO.NULL.'TESTING');
+    mysql -uretail_dba -p
+    use retail_db; 
+    select databese();
+    ALTER TABLE categories modify category_department_id int(11);
+    INSERT INTO categories(category_department_id,category_name) values (NULL,'TESTING');
+7) Importing data from catagories table (In categories_subset_17 directory) using '|' delimiter and categoryjd between 1 and 61 and encode null values for both string and non string columns.
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --warehouse-dir categories_subset_17 --fields-terminated-by '|' --where "category_id between 1 and 61" --null-string 'NA' --null-non-string 'NAN'
+8) Import entire schema retail_db in a directory categories_subset_all_tables
+sqoop import-all-tables --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --warehouse-dir categories_subset_all_tables
+
+scenario 4: 
+Import Single table categories (Subset data} to hive managed table , where category_id between 1 and 22
+ sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --where "category_id between 1 and 22" --hive-import --num-mappers 1 --hive-overwrite --hive-home /opt/hive
+
+add export HADOOP_CLASSPATH=$HADOOP_CLASSPATH:/opt/hive/lib/* and export HIVE_HOME=/opt/hive in sqoop-env.sh file
+
+Scenario 5 :
+1) List all the tables using sqoop command from retail_db
+sqoop-list-tables --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera
+2) Write simple sqoop eval command to check whether you have permission to read database tables or not.
+sqoop eval --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --query "select count(1) from categories;"
+3） Import all the tables as avro files in /user/hive/warehouse/retail cca174.db
+ERROR it is a bug and need to add -Dmapreduce.job.user.classpath.first=true
+sqoop import-all-tables -Dmapreduce.job.user.classpath.first=true --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --	-dir /user/hive/warehouse/retail_cca174.db --as-avrodatafile
+4） Import departments table as a text file in /user/cloudera/departments
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --warehouse-dir /user/cloudera/departments --as-textfile
+
+
+Scenario 6 :
+Compression Codec : org.apache.hadoop.io.compress.SnappyCodec
+1. Import entire database such that it can be used as a hive tables, it must be created in default schema.
+2. Also make sure each tables file is partitioned in 3 files e.g. part-00000, part-00002, part- 00003
+3. Store all the Java files in a directory called java_output to evalute the further Answer
+ERROR 
+sqoop import-all-tables --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --compress --compression-codec org.apache.hadoop.io.compress.SnappyCodec --num-mappers 3 --outdir java_output --hive-import --hive-overwrite --create-hive-table
+
+
+scenario 7 :
+1. Import department tables using your custom boundary query, which import departments between 1 to 25.
+2. Also make sure each tables file is partitioned in 2 files e.g. part-00000, part-00002 
+3. Also make sure you have imported only two columns from table, which are department_id,department_name
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --boundary-query "select 1,25 from departments " --columns department_id,department_name --warehouse-dir /user/cloudera/department --num-mappers 2 
+
+
+Scenario 8 :
+1. Import joined result of orders and order_items table join on orders.order_id = order_items.order_item_order_id.
+2. Also make sure each tables file is partitioned in 2 files e.g. part-00000, part-00002 
+3. Also make sure you use orderid columns for sqoop to use for boundary conditions.
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --query "select * from orders join order_items on orders.order_id = order_items.order_item_order_id where \$CONDITIONS" --split-by order_id --num-mappers 2 --target-dir /user/cloudera/order_join
+
+When importing a free-form query, you must specify a destination directory with --target-dir.
+
+If you want to import the results of a query in parallel, then each map task will need to execute a copy of the query, with results partitioned by bounding conditions inferred by Sqoop. Your query must include the token $CONDITIONS which each Sqoop process will replace with a unique condition expression. You must also select a splitting column with --split-by.
+
+If you are issuing the query wrapped with double quotes ("), you will have to use \$CONDITIONS instead of just $CONDITIONS to disallow your shell from treating it as a shell variable. For example, a double quoted query may look like: "SELECT * FROM x WHERE a='foo' AND \$CONDITIONS"
+
+
+Scenario 9 :
+1. Import departments table in a directory.
+2. Again import departments table same directory (However, directory already exist hence it should not overrride and append the results)
+3. Also make sure your results fields are terminated by '|' and lines terminated by '\n\
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --fields-terminated-by '|' --lines-terminated-by '\n' --warehouse-dir /user/cloudera/departments
+
+Scenario 10 :
+1. Create a database named hadoopexam and then create a table named departments in it, with following fields.
+department_id int, department_name string
+hive
+create database hadoopexam;
+use hadoopexam;
+create table departments(department_id int, department_name string);
+
+e.g. location should be hdfs://quickstart.cloudera:8020/user/hive/warehouse/hadoopexam.db/departments
+2. Please import data in existing table created above from retaidb.departments into hive table hadoopexam.departments. 
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --hive-table hadoopexam.departments --hive-import --hive-overwrite 
+
+3. Please import data in a non-existing table, means while importing create hive table named hadoopexam.departments_new
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --hive-table hadoopexam.departments_new --hive-import --hive-overwrite --create-hive-table
+
+answer has --hive-home , it doesn't need 
+
+Scenario 11 :
+1. Import departments table in a directory called departments.
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --hive-import --hive-overwrite --fields-terminated-by '\0001' --num-mappers 1 
+
+2. Once import is done, please insert following 5 records in departments mysql table. 
+Insert into departments(10, physics);
+Insert into departments(11, Chemistry); 
+Insert into departments(12, Maths); 
+Insert into departments(13, Science); 
+Insert into departments(14, Engineering);
+
+
+Insert into departments values(10, 'physics');
+Insert into departments values(11, 'Chemistry'); 
+Insert into departments values(12, 'Maths'); 
+Insert into departments values(13, 'Science'); 
+Insert into departments values(14, 'Engineering');
+
+
+3. Now import only new inserted records and append to existring directory . which has been created in first step.
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --target-dir /user/hive/warehouse/departments --append  --fields-terminated-by '\0001' --check-column department_id --incremental append --last-value 7
+
+must add --fields-terminated-by '\0001', otherwise into hive table record will be null value.
+
+
+Scenario 12 :
+
+1. Create a table in retailedb with following definition.
+CREATE table departments_new (department_id int(11), department_name varchar(45), created_date T1MESTAMP DEFAULT NOW());
+
+CREATE TABLE DEPARTMENTS_NEW (
+DEPARTMENT_ID INT(11), 
+DEPARTMENT_NAME VARCHAR(45), 
+CREATED_DATE TIMESTAMP DEFAULT NOW()
+);
+
+2. Now insert records from departments table to departments_new 
+
+INSERT INTO departments_new(DEPARTMENT_ID,DEPARTMENT_NAME)
+SELECT DEPARTMENT_ID,DEPARTMENT_NAME
+FROM departments;
+
+3. Now import data from departments_new table to hdfs.
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments_new --warehouse-dir /user/cloudera/ --fields-terminated-by '|' --split-by DEPARTMENT_ID --num-mappers 1
+
+if table has no primary key, using sqoop import should use --split-by
+
+4. Insert following 5 records in departmentsnew table. Insert into departments_new values(110, "Civil" , null); Insert into departments_new values(111, "Mechanical" , null); Insert into departments_new values(112, "Automobile" , null); Insert into departments_new values(113, "Pharma" , null);
+Insert into departments_new values(114, "Social Engineering" , null); 
+
+Insert into departments_new values(110, "Civil" , null);
+Insert into departments_new values(111, "Mechanical" , null); 
+Insert into departments_new values(112, "Automobile" , null); 
+Insert into departments_new values(113, "Pharma" , null);
+Insert into departments_new values(114, "Social Engineering" , null);
+
+5. Now do the incremental import based on created_date column.
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments_new --target-dir /user/cloudera/departments_new --fields-terminated-by '|' --check-column department_id --incremental append --last-value 14 --split-by department_id --num-mappers 1
+
+or use --check-column create_date --incremental lastmodified --last-value '2018-10-30 17:49:03'
+
+
+Scenario 13 :
+
+1. Create a table in retailedb with following definition.
+CREATE table departments_export (department_id int(11), department_name varchar(45), created_date T1MESTAMP DEFAULT NOWQ);
+
+CREATE table departments_export (
+department_id int(11),
+ department_name varchar(45), 
+ created_date TIMESTAMP DEFAULT NOW()
+ );
+
+2. Now import the data from following directory into departments_export table, /user/cloudera/departments new
+sqoop export --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments_export --export-dir /user/hive/warehouse/departments --batch --input-fields-terminated-by '\001' 
+
+should define --input-fields-terminated-by '\001', if not sqoop will be failed because can't parse input data.
+
+
+Scenario 14 :
+1. Create a csv file named updated_departments.csv with the following contents in local file system. updated_departments.csv
+
+2,fitness
+3,footwear
+12,fathematics
+13,fcience
+14,engineering
+1000,management
+
+touch updated_departments.csv
+paste record into updated_departments.csv
+
+
+2. Upload this csv file to hdfs filesystem,
+
+hdfs dfs -mkdir /user/root/new_data
+hdfs dfs -put updated_departments.csv /user/root/new_data
+
+3. Now export this data from hdfs to mysql retaildb.departments table. During upload make sure existing department will just updated and new departments needs to be inserted.
+
+sqoop export --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --input-fields-terminated-by ',' --update-key department_id --update-mode allowinsert --export-dir /user/root/new_data --batch
+
+4. Now update updated_departments.csv file with below content. 
+2,Fitness
+3,Footwear
+12,Fathematics
+13,Science
+14,Engineering
+1000,Management
+2000,Quality Check
+5. Now upload this file to hdfs.
+
+hdfs dfs -put -f updated_departments.csv /user/root/new_data
+
+
+6. Now export this data from hdfs to mysql retail_db.departments table. During upload make sure existing department will just updated and no new departments needs to be inserted.
+
+sqoop export --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --update-key department_id --update-mode allowinsert --input-fields-terminated-by ',' --export-dir /user/root/new_data
+
+
+
+Scenario 15:
+1. In mysql departments table please insert following record. Insert into departments values(9999, '"Data Science"1); 
+
+Insert into departments values(9999, 'Data Science')
+
+2. Now there is a downstream system which will process dumps of this file. However, system is designed the way that it can process only files if fields are enlcosed in(') single quote and separate of the field should be (-} and line needs to be terminated by : (colon).
+3. If data itself contains the " (double quote } than it should be escaped by \.
+4. Please import the departments table in a directory called departments_enclosedby and file should be able to process by downstream system.
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --target-dir /user/cloudera/departments_enclosedby --enclosed-by \' --escaped-by '\\' --fields-terminated-by '-' --lines-terminated-by ':'
+
+--escaped-by not work
+
+Scenario 16:
+1. Create a table in hive as below.
+create table departments_hive(department_id int, department_name string);
+2. Now import data from mysql table departments to this hive table. Please make sure that data should be visible using below hive command, select" from departments_hive
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --hive-import --hive-table departments_hive --hive-overwrite 
+
+
+Scenario 17
+1. Create a table in hive as below, create table departments_hiveOl(department_id int, department_name string, avg_salary int);
+
+create table departments_hive0l(department_id int, department_name string, avg_salary int);
+
+2. Create another table in mysql using below statement CREATE TABLE IF NOT EXISTS departments_hive01(id int, department_name varchar(45), avg_salary int);
+
+CREATE TABLE IF NOT EXISTS departments_hive01(id int, department_name varchar(45), avg_salary int);
+
+3. Copy all the data from departments table to departments_hive01 using insert into departments_hive01 select a.*, null from departments a;
+Also insert following records as below
+insert into departments_hive01 values(777, "Not known",1000); insert into departments_hive01 values(8888, null,1000); insert into departments_hive01 values(666, null,1100);
+
+insert into departments_hive01 select a.*, null from departments a;
+insert into departments_hive01 values(777, "Not known",1000); 
+insert into departments_hive01 values(8888, null,1000); 
+insert into departments_hive01 values(666, null,1100);
+
+
+4. Now import data from mysql table departments_hive01 to this hive table. Please make sure that data should be visible using below hive command. Also, while importing if null value found for department_name column replace it with "" (empty string) and for id column with -999 select * from departments_hive;
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments_hive01 --hive-import --hive-overwrite --hive-table default.departments_hive01 --null-string '' --null-non-string '-999' --split-by department_id --num-mappers 1
+
+
+Scenario 18:
+1. Create mysql table as below. mysql --user=retail_dba -password=cloudera use retail_db
+CREATE TABLE IF NOT EXISTS departments_hive02(id int, department_name varchar(45), avg_salary int); show tables;
+
+CREATE TABLE IF NOT EXISTS departments_hive02(id int, department_name varchar(45), avg_salary int);
+
+
+2. Now export data from hive table departments_hive01 in departments_hive02. While exporting, please note following.
+wherever there is a empty string it should be loaded as a null value in mysql. wherever there is -999 value for int field, it should be created as null value.
+
+sqoop export --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments_hive02 --export-dir /user/hive/warehouse/departments_hive01 --num-mappers 1 --input-fields-terminated-by '\001' --input-fields-terminated-by '\n' --input-null-string "" --input-null-non-string -999 -batch 
+
+
+Scenario 19:
+
+1. Import departments table from mysql to hdfs as textfile in departments_text directory.
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --fields-terminated-by '\001' --lines-terminated-by '\n' --target-dir /user/cloudera/departments_text --as-textfile --num-mappers 1
+
+2. Import departments table from mysql to hdfs as sequncefile in departments_sequence directory.
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --fields-terminated-by '\001' --lines-terminated-by '\n' --target-dir /user/cloudera/departments_sequence --as-sequencefile --num-mappers 1
+
+using hdfs dfs -text could not read sequence file on HDFS
+
+
+3. Import departments table from mysql to hdfs as avro file in departments avro directory.
+
+sqoop import -Dmapreduce.job.user.classpath.first=true --connect jdbc:mysql://localhost:3306/retail_db?zeroDateTimeBehavior=round --username retail_dba --password cloudera --table departments --fields-terminated-by '\001' --lines-terminated-by '\n' --target-dir /user/cloudera/departments_avro --as-avrodatafile --num-mappers 1
+
+remember to add -Dmapreduce.job.user.classpath.first=true
+
+using hdfs dfs -text /user/cloudera/departments_avro/* to check hdfs file of avro type file
+
+
+4. Import departments table from mysql to hdfs as parquet file in departments_parquet directory.
+
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table departments --fields-terminated-by '\001' --lines-terminated-by '\n' --target-dir /user/cloudera/departments_parquet --as-parquetfile --num-mappers 1 
+
+
+Scenario 20:
+
+1. Write a Sqoop Job which will import "retaildb.categories" table to hdfs, in a directory name "categories_targetJob".
+
+sqoop job --create sqoop_job -- import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table categories --target-dir categories_targetJob --num-mappers 1 --fields-terminated-by '\001' --lines-terminated-by '\n' 
+
+sqoop job --exec sqoop_job
+
+
+using sqoop job --list to check sqoop job whether be created.
+note should be -- import not --import
+
+
+Scenario 74:
+Copy "retaildb.orders" and "retaildb.orderjtems" table to hdfs in respective directory p89_orders and p89_order_items
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table orders --target-dir p89_orders --num-mappers 1
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table order_items --target-dir p89_order_items --num-mappers 1
+
+
+Scenario 79:
+Copy "retaildb.products" table to hdfs in a directory p93_products
+sqoop import --connect jdbc:mysql://localhost:3306/retail_db --username retail_dba --password cloudera --table products --target-dir p93_products --num-mappers 1
