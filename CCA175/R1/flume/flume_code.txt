@@ -1,0 +1,17 @@
+Scenario 22 :
+
+CREATE TABLE flumeemployee (name string, salary int, sex string ,age int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+Scenario 24 :
+
+CREATE TABLE flumemaleemployee (name string, salary int, sex string ,age int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',';
+
+On hdfs age is not null, but in Hive age has some null value
+
+
+
+Scenario 25 :
+
+CREATE TABLE flumemaleemployee1 (sex int, name string, city string) row format delimited fields terminated by ',';
+CREATE TABLE flumefemaleemployee1 (sex int, name string, city string) row format delimited fields terminated by ',';
+
+

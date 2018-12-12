@@ -1,0 +1,30 @@
+#define name of source, sink, channel
+agent1.sources = r1
+agent1.sinks = s1
+agent1.channels = c1
+
+#define source parameter
+
+agent1.sources.r1.type = exec
+agent1.sources.r1.command = tail -F /opt/gen_logs/logs/access.log
+
+#define sink
+
+agent1.sinks.s1.type = hdfs
+agent1.sinks.s1.hdfs.path = /user/flume/flume1
+agent1.sinks.s1.hdfs.fileType=DataStream
+
+#define channel
+agent1.channels.c1.type = memory
+agent1.channels.c1.capacity = 1000
+agent1.channels.c1.transactionCapacity = 100
+
+
+#Blind source channel and sink channel
+agent1.sources.r1.channels = c1
+agent1.sinks.s1.channel = c1
+
+
+
+
+
